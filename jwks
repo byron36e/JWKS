@@ -6,7 +6,6 @@
 #https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28&tool=javascript
 #https://www.moesif.com/blog/technical/api-development/Building-RESTful-API-with-Flask/
 #https://stackoverflow.com/questions/67589495/how-to-create-jwks-public-private-key-pair-in-python
-#I downloaded a module called request to test for POST requests, not postive how it works. 
 #I was also unsure how to test against the inlcuded client, so I'm not positive if or how it works.
 #I truthfully tried my best with this project and definetly spent well more than 12 hours in order to get this far.
 
