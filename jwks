@@ -1,0 +1,84 @@
+#Brian Erhart CSCE 3550 sec. 002
+# Not a huge fan of this project as we were never taught about API's or JWKS endpoints ever, and the instructions were not very clear. 
+#I felt kinda thrown into this and I asked TA's and other students for help but most were as lost as I.
+#I used some sources online for guidance, specifically for modules I would need to download (I used flask for endpoints, jtw for encoding, and pycryptodome to generate keys.)
+#Here are the references I used:
+#https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28&tool=javascript
+#https://www.moesif.com/blog/technical/api-development/Building-RESTful-API-with-Flask/
+#https://stackoverflow.com/questions/67589495/how-to-create-jwks-public-private-key-pair-in-python
+#I downloaded a module called request to test for POST requests, not postive how it works. 
+#I was also unsure how to test against the inlcuded client, so I'm not positive if or how it works.
+#I truthfully tried my best with this project and definetly spent well more than 12 hours in order to get this far.
+
+from flask import Flask, jsonify, request
+from Crypto.PublicKey import RSA
+from datetime import datetime, timedelta
+import jwt
+
+
+app = Flask(__name__)
+
+#key storage
+keys = []
+
+#JWKS endpoint
+@app.route('/jwks.json')
+def jwks_endpoint():
+    global keys
+    keys = [keys for key in keys if key['exp'] > datetime.utcnow()]
+    jwks = {"keys": keys}
+    return jsonify(jwks)
+
+
+#Auth endpoint
+@app.route('/auth', methods = ['POST'])
+def auth_endpoint():
+    global keys
+    expired = request.args.get('expired')
+    keys = [key for key in keys if key['exp'] > datetime.utcnow()]
+    if expired: 
+        key = keys[-1]
+    else:
+        key = keys[0]
+    payload = {
+        'sub': 'user_id',
+        'exp': key['exp'],
+    }
+    if request.data == '':
+        token = jwt.encode(payload, key['n'], algorithm = 'RS256')
+        print(token)
+        return token
+    else:
+        return "Invalid request"
+
+#Function for generating keys    
+def generate_key():
+    global keys
+    key = RSA.generate(2048)
+    key_id = "key_" + datetime.utcnow().strftime("%Y%m$d%H%M%S")
+
+    expiry = datetime.utcnow() + timedelta(days = 30)
+
+    public_key = key.publickey().export_key(format='PEM')
+    jwk = {
+            "kty": "RSA",
+            "kid": key_id,
+            "n": public_key.decode(),
+            "e":key.e,
+            "exp": expiry,
+        }
+    keys.append(jwk)
+    return key_id
+
+#Generate a new key and add it to list of keys
+#@app.route('/generate_key', methods = ['POST'])
+#def generate_key_endpoint():
+#    key_id = generate_key()
+#   return "Key generated with ID: " + key_id
+
+#Generate initial key
+generate_key()
+
+#Runs the app in port 8080
+if __name__ == '__main__':
+    app.run(port=8080) 
